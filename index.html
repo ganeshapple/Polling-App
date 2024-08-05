@@ -29,7 +29,10 @@
   <div>
     <h2>Create a new poll</h2>
     <input type="text" id="pollId" placeholder="Poll ID" />
-    <input type="text" id="options" placeholder="Options (comma separated)" />
+    <div id="optionsContainer">
+      <input type="text" class="optionInput" placeholder="Option" />
+    </div>
+    <button onclick="addOption()">Add Option</button>
     <button onclick="createPoll()">Create Poll</button>
   </div>
   <div>
@@ -47,9 +50,19 @@
   <script>
     const socket = io();
 
+    function addOption() {
+      const optionsContainer = document.getElementById('optionsContainer');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'optionInput';
+      input.placeholder = 'Option';
+      optionsContainer.appendChild(input);
+    }
+
     function createPoll() {
       const id = document.getElementById('pollId').value;
-      const options = document.getElementById('options').value.split(',');
+      const optionInputs = document.getElementsByClassName('optionInput');
+      const options = Array.from(optionInputs).map(input => input.value).filter(value => value.trim() !== '');
       fetch('/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
