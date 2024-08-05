@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Polling App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    .poll-options {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .poll-options button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    .results {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Real-Time Polling App</h1>
+  <div class="poll-options">
+    <button onclick="vote('option1')">Option 1</button>
+    <button onclick="vote('option2')">Option 2</button>
+    <button onclick="vote('option3')">Option 3</button>
+  </div>
+  <div class="results">
+    <h2>Results:</h2>
+    <p>Option 1: <span id="option1">0</span></p>
+    <p>Option 2: <span id="option2">0</span></p>
+    <p>Option 3: <span id="option3">0</span></p>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    socket.on('pollResults', (results) => {
+      document.getElementById('option1').innerText = results.option1;
+      document.getElementById('option2').innerText = results.option2;
+      document.getElementById('option3').innerText = results.option3;
+    });
+
+    function vote(option) {
+      socket.emit('vote', option);
+    }
+  </script>
+</body>
+</html>
