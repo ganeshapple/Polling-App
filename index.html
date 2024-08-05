@@ -26,31 +26,69 @@
 </head>
 <body>
   <h1>Real-Time Polling App</h1>
-  <div class="poll-options">
-    <button onclick="vote('option1')">Option 1</button>
-    <button onclick="vote('option2')">Option 2</button>
-    <button onclick="vote('option3')">Option 3</button>
+  <div>
+    <h2>Create a new poll</h2>
+    <input type="text" id="pollId" placeholder="Poll ID" />
+    <input type="text" id="options" placeholder="Options (comma separated)" />
+    <button onclick="createPoll()">Create Poll</button>
   </div>
+  <div>
+    <h2>Join a poll</h2>
+    <input type="text" id="joinPollId" placeholder="Poll ID" />
+    <button onclick="joinPoll()">Join Poll</button>
+  </div>
+  <div class="poll-options" id="pollOptions"></div>
   <div class="results">
     <h2>Results:</h2>
-    <p>Option 1: <span id="option1">0</span></p>
-    <p>Option 2: <span id="option2">0</span></p>
-    <p>Option 3: <span id="option3">0</span></p>
+    <div id="results"></div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
 
+    function createPoll() {
+      const id = document.getElementById('pollId').value;
+      const options = document.getElementById('options').value.split(',');
+      fetch('/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, options })
+      }).then(response => response.text()).then(alert);
+    }
+
+    function joinPoll() {
+      const pollId = document.getElementById('joinPollId').value;
+      socket.emit('joinPoll', pollId);
+    }
+
     socket.on('pollResults', (results) => {
-      document.getElementById('option1').innerText = results.option1;
-      document.getElementById('option2').innerText = results.option2;
-      document.getElementById('option3').innerText = results.option3;
+      const pollOptions = document.getElementById('pollOptions');
+      pollOptions.innerHTML = '';
+      Object.keys(results).forEach(option => {
+        const button = document.createElement('button');
+        button.innerText = option;
+        button.onclick = () => vote(option);
+        pollOptions.appendChild(button);
+      });
+
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+      Object.keys(results).forEach(option => {
+        const p = document.createElement('p');
+        p.innerText = `${option}: ${results[option]}`;
+        resultsDiv.appendChild(p);
+      });
     });
 
     function vote(option) {
-      socket.emit('vote', option);
+      const pollId = document.getElementById('joinPollId').value;
+      socket.emit('vote', { pollId, option });
     }
+
+    socket.on('error', (message) => {
+      alert(message);
+    });
   </script>
 </body>
 </html>
