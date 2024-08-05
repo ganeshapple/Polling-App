@@ -50,9 +50,8 @@
     <div id="results"></div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
+    const polls = {};
 
     function addOption() {
       const optionsContainer = document.getElementById('optionsContainer');
@@ -67,62 +66,67 @@
       const id = document.getElementById('pollId').value;
       const optionInputs = document.getElementsByClassName('optionInput');
       const options = Array.from(optionInputs).map(input => input.value).filter(value => value.trim() !== '');
-      fetch('/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, options })
-      }).then(response => response.text()).then(alert).then(() => loadPolls());
+      if (id && options.length > 0) {
+        polls[id] = options.reduce((acc, option) => {
+          acc[option] = 0;
+          return acc;
+        }, {});
+        alert('Poll created');
+        loadPolls();
+      } else {
+        alert('Please provide a poll ID and at least one option.');
+      }
     }
 
     function loadPolls() {
-      fetch('/polls')
-        .then(response => response.json())
-        .then(polls => {
-          const pollList = document.getElementById('pollList');
-          pollList.innerHTML = '';
-          polls.forEach(poll => {
-            const pollItem = document.createElement('div');
-            pollItem.innerText = poll;
-            pollItem.onclick = () => joinPoll(poll);
-            pollList.appendChild(pollItem);
-          });
-        });
+      const pollList = document.getElementById('pollList');
+      pollList.innerHTML = '';
+      Object.keys(polls).forEach(poll => {
+        const pollItem = document.createElement('div');
+        pollItem.innerText = poll;
+        pollItem.onclick = () => joinPoll(poll);
+        pollList.appendChild(pollItem);
+      });
     }
 
     function joinPoll(pollId = null) {
       if (!pollId) {
         pollId = document.getElementById('joinPollId').value;
       }
-      socket.emit('joinPoll', pollId);
+      if (polls[pollId]) {
+        displayPoll(pollId);
+      } else {
+        alert('Poll not found');
+      }
     }
 
-    socket.on('pollResults', (results) => {
+    function displayPoll(pollId) {
       const pollOptions = document.getElementById('pollOptions');
       pollOptions.innerHTML = '';
-      Object.keys(results).forEach(option => {
+      Object.keys(polls[pollId]).forEach(option => {
         const button = document.createElement('button');
         button.innerText = option;
-        button.onclick = () => vote(option);
+        button.onclick = () => vote(pollId, option);
         pollOptions.appendChild(button);
       });
 
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = '';
-      Object.keys(results).forEach(option => {
-        const p = document.createElement('p');
-        p.innerText = `${option}: ${results[option]}`;
-        resultsDiv.appendChild(p);
-      });
-    });
-
-    function vote(option) {
-      const pollId = document.getElementById('joinPollId').value;
-      socket.emit('vote', { pollId, option });
+      displayResults(pollId);
     }
 
-    socket.on('error', (message) => {
-      alert(message);
-    });
+    function displayResults(pollId) {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+      Object.keys(polls[pollId]).forEach(option => {
+        const p = document.createElement('p');
+        p.innerText = `${option}: ${polls[pollId][option]}`;
+        resultsDiv.appendChild(p);
+      });
+    }
+
+    function vote(pollId, option) {
+      polls[pollId][option]++;
+      displayResults(pollId);
+    }
 
     document.addEventListener('DOMContentLoaded', loadPolls);
   </script>
