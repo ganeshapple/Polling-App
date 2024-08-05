@@ -26,6 +26,10 @@ app.post('/create', (req, res) => {
   res.status(201).send('Poll created');
 });
 
+app.get('/polls', (req, res) => {
+  res.json(Object.keys(polls));
+});
+
 app.delete('/delete/:id', (req, res) => {
   const { id } = req.params;
   if (!polls[id]) {
