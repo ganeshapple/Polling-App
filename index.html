@@ -36,6 +36,10 @@
     <button onclick="createPoll()">Create Poll</button>
   </div>
   <div>
+    <h2>Available Polls</h2>
+    <div id="pollList"></div>
+  </div>
+  <div>
     <h2>Join a poll</h2>
     <input type="text" id="joinPollId" placeholder="Poll ID" />
     <button onclick="joinPoll()">Join Poll</button>
@@ -67,11 +71,28 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, options })
-      }).then(response => response.text()).then(alert);
+      }).then(response => response.text()).then(alert).then(() => loadPolls());
     }
 
-    function joinPoll() {
-      const pollId = document.getElementById('joinPollId').value;
+    function loadPolls() {
+      fetch('/polls')
+        .then(response => response.json())
+        .then(polls => {
+          const pollList = document.getElementById('pollList');
+          pollList.innerHTML = '';
+          polls.forEach(poll => {
+            const pollItem = document.createElement('div');
+            pollItem.innerText = poll;
+            pollItem.onclick = () => joinPoll(poll);
+            pollList.appendChild(pollItem);
+          });
+        });
+    }
+
+    function joinPoll(pollId = null) {
+      if (!pollId) {
+        pollId = document.getElementById('joinPollId').value;
+      }
       socket.emit('joinPoll', pollId);
     }
 
@@ -102,6 +123,8 @@
     socket.on('error', (message) => {
       alert(message);
     });
+
+    document.addEventListener('DOMContentLoaded', loadPolls);
   </script>
 </body>
 </html>
